@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>來一捲記帳小幫手</title>
+<script>
+/* 先套用主題，避免閃爍 */
+(function(){try{var t=localStorage.getItem("laiyijuan-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<style>
+:root{
+  --paper:#f6f1e4; --paper2:#fcf9f0; --ink:#1d1b16; --muted:#585244;
+  --line:#857d6c; --red:#b3261e; --yellow:#d9a520;
+  --banner-bg:#b3261e; --banner-fg:#f6f1e4; --banner-btn-fg:#1d1b16;
+  --sans:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"PingFang TC","Noto Sans TC","Microsoft JhengHei",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1b15; --paper2:#17271e; --ink:#efe6cf; --muted:#beb69d;
+    --line:#748070; --red:#ff917c; --yellow:#e3b341; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1b15; --paper2:#17271e; --ink:#efe6cf; --muted:#beb69d;
+  --line:#748070; --red:#ff917c; --yellow:#e3b341; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{font-size:100%;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:1.0625rem;line-height:1.6;padding-bottom:88px;overflow-wrap:anywhere;word-break:break-word}
+h1,h2,h3,p,dl,dd,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.muted{color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* 焦點 */
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.skip{position:absolute;left:8px;top:-200px;z-index:50;background:var(--ink);color:var(--paper);
+  padding:8px 16px;min-height:44px;min-width:44px;display:inline-flex;align-items:center;text-decoration:none}
+.skip:focus{top:8px;outline:3px solid var(--yellow);outline-offset:2px}
+
+/* 範例橫條 */
+.demo-banner{position:sticky;top:0;z-index:30;background:var(--banner-bg);color:var(--banner-fg);
+  padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
+  font-weight:700;border-bottom:3px double var(--banner-fg)}
+.demo-banner .btn{background:var(--banner-fg);color:var(--banner-btn-fg);border-color:var(--banner-fg)}
+
+/* 小票表頭 */
+.masthead{text-align:center;padding:20px 16px 0;max-width:1100px;margin:0 auto}
+.masthead h1{font-size:1.75rem;letter-spacing:.5em;text-indent:.5em;font-weight:800;line-height:1.3}
+.masthead .sub{letter-spacing:.2em;text-indent:.2em;color:var(--muted);font-size:1rem;
+  padding-bottom:10px;border-bottom:4px double var(--ink)}
+
+/* 導覽 */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--paper);border-top:2px solid var(--ink)}
+.nav ul{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:1100px;margin:0 auto}
+.nav a{display:flex;align-items:center;justify-content:center;min-height:56px;min-width:44px;padding:4px 2px;
+  color:var(--ink);text-decoration:none;font-size:1rem;text-align:center;line-height:1.25;
+  border-top:4px solid transparent;margin-top:-2px}
+.nav a[aria-current="page"]{font-weight:800;border-top-color:var(--yellow);text-decoration:underline;text-underline-offset:5px}
+
+/* 主要內容 */
+main{max-width:1100px;margin:0 auto;padding:8px 16px 24px}
+.view>h2{font-size:1.35rem;margin:16px 0 4px;letter-spacing:.08em}
+.view>h2::before{content:"";display:inline-block;width:8px;height:.9em;background:var(--yellow);margin-right:8px;vertical-align:-1px}
+.block{border-top:2px dashed var(--line);padding:16px 0;margin-top:16px;min-width:0}
+.block>h3{font-size:1.15rem;margin-bottom:8px;letter-spacing:.05em}
+.hint{color:var(--muted);font-size:1rem;margin:4px 0}
+
+/* 表單 */
+.field{display:flex;flex-direction:column;gap:4px;min-width:0;margin:10px 0}
+.field label,.lbl{font-weight:700;font-size:1rem}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{width:100%;max-width:100%;min-width:0;min-height:48px;padding:8px 10px;background:var(--paper2);color:var(--ink);
+  border:1.5px solid var(--ink);border-radius:2px;font-size:1.0625rem}
+/* 跨瀏覽器安全版面（Safari/WebKit）：格線與彈性盒的子項目不得因內容或欄位內在寬度撐開 */
+html,body{max-width:100%}
+.masthead,.nav,.nav ul,.nav li,main,.view,.cols>*,.row2>*,.row3>*,.seg>*,.pager>*,.btn-row>*,.field,.field>*,.lines>li>*,.line>*,.totals>div>*,.kv>*,.demo-banner>*,form,section,details{min-width:0}
+button,.btn{max-width:100%}
+.nav a{overflow-wrap:anywhere}
+input[type="date"]{display:block;-webkit-appearance:none;appearance:none;text-align:left}
+input[type="date"]::-webkit-date-and-time-value{text-align:left}
+input::placeholder{color:var(--muted);opacity:1}
+input[type="file"]{padding:6px;border-style:dashed}
+input.big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:2rem;font-weight:700;
+  text-align:right;min-height:72px;border-width:2.5px}
+input[aria-invalid="true"],select[aria-invalid="true"]{border-color:var(--red);border-width:3px}
+.err{color:var(--red);font-weight:700;font-size:1rem}
+.err:empty{display:none}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:48px;padding:8px 16px;
+  background:transparent;color:var(--ink);border:1.5px solid var(--ink);border-radius:2px;
+  font-size:1.0625rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center}
+.btn-primary{background:var(--ink);color:var(--paper);width:100%;min-height:60px;font-size:1.25rem;letter-spacing:.1em}
+.btn-wide{width:100%}
+.btn-del{width:128px;max-width:100%;justify-self:end;grid-column:-2/-1;color:var(--red);border-color:var(--red);border-style:dashed;padding:8px 10px}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.btn-row>.btn{flex:1 1 140px}
+.btn-row>.btn-primary{flex-basis:100%}
+.toggle{width:100%;justify-content:space-between;border-style:dashed;margin-top:8px}
+.toggle::after{content:"＋";font-family:var(--mono)}
+.toggle[aria-expanded="true"]::after{content:"－"}
+
+/* 小票列 */
+.lines>li,.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;
+  padding:8px 0;border-bottom:1px dashed var(--line)}
+.lines>li:last-child{border-bottom:0}
+.line-sub{grid-column:1/-1;color:var(--muted);font-size:1rem;display:flex;flex-wrap:wrap;gap:0 14px}
+.line-sub .num{text-align:left}
+/* 編輯表單佔滿整列，避免被共用 flex 樣式壓縮。 */
+details.line-sub{display:block;min-width:0;width:100%}
+[data-ing-edit],[data-recipe]{display:grid;grid-template-columns:minmax(0,1fr);width:100%;min-width:0}
+[data-ing-edit] input,[data-recipe] input,[data-recipe] select{min-width:44px}
+#prod-list .item{min-width:0}
+.line-act{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.weekrow{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink) !important;font-weight:700}
+.offrange{color:var(--muted)}
+.tag{display:inline-block;border:1.5px solid var(--red);color:var(--red);font-weight:700;padding:0 6px;font-size:1rem}
+.tag-plain{display:inline-block;border:1.5px solid var(--ink);padding:0 6px;font-size:1rem}
+
+.totals{margin:12px 0}
+.totals>div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:1.15rem}
+.totals dd{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
+.totals>div.grand{border-top:4px double var(--ink);margin-top:4px;padding-top:10px;font-size:1.4rem;font-weight:800}
+
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:12px 0}
+.seg .btn+.btn{border-left-width:0}
+.pager{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;margin:12px 0}
+.pager p{text-align:center;font-weight:700}
+
+/* 印章與提醒 */
+.stampwrap{padding:10px 6px;overflow:hidden}
+.stamp{display:inline-block;border:4px double var(--red);color:var(--red);font-weight:800;font-size:1.15rem;
+  padding:6px 12px;transform:rotate(-1.5deg);letter-spacing:.06em;max-width:100%}
+.notice{border-left:6px solid var(--red);padding:8px 12px;margin:12px 0;font-weight:700}
+.notice b{color:var(--red)}
+.mild{border:1.5px dashed var(--ink);padding:6px 10px;margin:8px 0;font-weight:700}
+.missing{font-weight:700;margin:8px 0}
+
+/* 口味／食材 */
+.item{border-bottom:2px dashed var(--line);padding:14px 0}
+.item:last-child{border-bottom:0}
+.item h4{margin:0 0 4px;font-size:1.15rem}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+.kv .num{font-weight:700}
+
+/* 狀態訊息 */
+.toast{position:fixed;left:12px;right:12px;bottom:72px;z-index:40;margin:0 auto;max-width:560px;
+  background:var(--ink);color:var(--paper);padding:12px 16px;font-weight:700;text-align:center;
+  border:2px solid var(--paper);pointer-events:none}
+.toast:empty{padding:0;border:0}
+
+@media (max-width:899px){
+  body{padding-bottom:0}
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .nav{padding-bottom:env(safe-area-inset-bottom,0px)}
+  .toast{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  .demo-banner{flex-wrap:nowrap;justify-content:space-between;gap:8px;padding:4px 8px;font-size:16px;line-height:1.25}
+  .demo-banner>span{flex:1;min-width:0}
+  .demo-banner .btn{flex-shrink:0;min-height:44px;padding:4px 8px;font-size:16px}
+}
+
+/* 桌機 */
+@media (min-width:900px){
+  body{padding-bottom:32px}
+  .nav{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:2px solid var(--ink)}
+  .nav a{border-top:0;margin-top:0;border-bottom:4px solid transparent;font-size:1.0625rem}
+  .nav a[aria-current="page"]{border-bottom-color:var(--yellow)}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 48px;align-items:start}
+  .cols>.span{grid-column:1/-1}
+  .row3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .toast{bottom:24px}
+  .narrow{max-width:720px}
+}
+
+@media (forced-colors:active){
+  .btn,input,select{border-color:ButtonText}
+  .btn-primary,.btn[aria-pressed="true"]{border:3px solid Highlight}
+  .stamp,.tag,.notice,.demo-banner,.toast{border-color:CanvasText}
+  .nav a[aria-current="page"]{border-color:Highlight}
+  :focus-visible{outline-color:Highlight}
+  .view>h2::before{background:CanvasText}
+}
+
+@media print{
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --paper:#fff; --paper2:#fff; --ink:#000; --muted:#000; --line:#000; --red:#000; --yellow:#000}
+  body{background:#fff;color:#000;padding:0;font-size:12pt}
+  .nav,.skip,.toast,.no-print{display:none !important}
+  .demo-banner{position:static;background:#fff;color:#000;border:2px solid #000}
+  .demo-banner .btn{display:none}
+  main{max-width:none;padding:0}
+  .block{break-inside:avoid}
+  .stamp{transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip skip-link" href="#main">跳到主要內容</a>
+<div class="demo-banner" data-testid="demo-banner" id="demo-banner" role="region" aria-label="範例模式提醒" hidden>
+  <span>範例資料（假例子），不是店裡的帳</span>
+  <button type="button" class="btn" data-testid="demo-off" id="demo-off">回到我的帳本</button>
+</div>
+<div id="read-only-banner" class="notice" role="alert" hidden>
+  <b>帳本資料讀不出來，為了保護原資料目前不能儲存</b>
+  <div class="btn-row">
+    <button type="button" class="btn" id="download-raw">下載原始資料</button>
+    <a class="btn" href="#settings" id="recover-import">匯入備份</a>
+    <button type="button" class="btn" id="restart-ledger">清空並重新開始</button>
+  </div>
+</div>
+<header class="masthead">
+  <h1>來一捲</h1>
+  <p class="sub">記帳小幫手</p>
+</header>
+<nav class="nav" aria-label="主要分頁">
+  <ul>
+    <li><a href="#today" data-testid="nav-today" data-nav="today">今天</a></li>
+    <li><a href="#report" data-testid="nav-report" data-nav="report">報表</a></li>
+    <li><a href="#cost" data-testid="nav-cost" data-nav="cost">成本售價</a></li>
+    <li><a href="#stock" data-testid="nav-stock" data-nav="stock">庫存</a></li>
+    <li><a href="#settings" data-testid="nav-settings" data-nav="settings" aria-label="設定與備份">設定</a></li>
+  </ul>
+</nav>
+<main id="main" tabindex="-1">
+
+<!-- 今天 -->
+<section class="view" id="view-today" aria-labelledby="h-today" hidden>
+  <h2 id="h-today">記帳</h2>
+  <div id="home-stock"></div>
+  <div class="cols">
+    <form id="day-form" novalidate>
+      <div class="field">
+        <label for="day-date">日期（可改日期補記）</label>
+        <input type="date" id="day-date" data-testid="day-date" aria-describedby="day-date-err day-state">
+        <span class="err" id="day-date-err"></span>
+      </div>
+      <p class="hint" id="day-state"></p>
+      <div class="field">
+        <label for="day-revenue">今天總收入（元）</label>
+        <input type="text" inputmode="numeric" autocomplete="off" class="big" id="day-revenue" data-testid="day-revenue" placeholder="0" aria-describedby="day-revenue-err">
+        <span class="err" id="day-revenue-err"></span>
+      </div>
+      <button type="button" class="btn toggle" id="flavors-toggle" data-testid="flavors-toggle" aria-expanded="false" aria-controls="flavors-box">各口味條數（可不填）</button>
+      <div id="flavors-box" hidden></div>
+      <div class="field">
+        <label for="day-note">備註（可不填）</label>
+        <input type="text" id="day-note" autocomplete="off">
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary" data-testid="day-save" id="day-save">儲存這一天</button>
+        <button type="button" class="btn btn-wide" data-testid="day-closed" id="day-closed" aria-pressed="false">今天公休</button>
+      </div>
+    </form>
+    <div>
+      <section class="block" aria-labelledby="h-pur">
+        <h3 id="h-pur">進貨</h3>
+        <ul class="lines" id="purchase-list"></ul>
+        <form id="purchase-form" novalidate>
+          <div class="field">
+            <label for="purchase-item">品項</label>
+            <input type="text" id="purchase-item" data-testid="purchase-item" list="ing-datalist" autocomplete="off" aria-describedby="purchase-item-err">
+            <datalist id="ing-datalist"></datalist>
+            <span class="err" id="purchase-item-err"></span>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="purchase-qty">數量</label>
+              <input type="text" inputmode="decimal" id="purchase-qty" data-testid="purchase-qty" autocomplete="off" aria-describedby="purchase-qty-err">
+              <span class="err" id="purchase-qty-err"></span>
+            </div>
+            <div class="field">
+              <label for="purchase-unit">單位</label>
+              <input type="text" id="purchase-unit" data-testid="purchase-unit" autocomplete="off" placeholder="公斤、包…">
+            </div>
+          </div>
+          <div class="field">
+            <label for="purchase-amount">總金額（元）</label>
+            <input type="text" inputmode="numeric" id="purchase-amount" data-testid="purchase-amount" autocomplete="off" aria-describedby="purchase-amount-err">
+            <span class="err" id="purchase-amount-err"></span>
+          </div>
+          <button type="submit" class="btn btn-wide" data-testid="purchase-add">新增進貨</button>
+        </form>
+      </section>
+      <section class="block" aria-labelledby="h-exp">
+        <h3 id="h-exp">其他支出</h3>
+        <ul class="lines" id="expense-list"></ul>
+        <form id="expense-form" novalidate>
+          <div class="field">
+            <label for="expense-category">分類</label>
+            <select id="expense-category" data-testid="expense-category">
+              <option>房租</option><option>水電瓦斯</option><option>包材</option><option>雜支</option><option>其他</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="expense-item">項目</label>
+            <input type="text" id="expense-item" data-testid="expense-item" autocomplete="off" aria-describedby="expense-item-err">
+            <span class="err" id="expense-item-err"></span>
+          </div>
+          <div class="field">
+            <label for="expense-amount">金額（元）</label>
+            <input type="text" inputmode="numeric" id="expense-amount" data-testid="expense-amount" autocomplete="off" aria-describedby="expense-amount-err">
+            <span class="err" id="expense-amount-err"></span>
+          </div>
+          <button type="submit" class="btn btn-wide" data-testid="expense-add">新增支出</button>
+        </form>
+      </section>
+    </div>
+    <section class="block span" aria-labelledby="h-recent">
+      <h3 id="h-recent">最近 7 天</h3>
+      <ul class="lines" id="recent-list"></ul>
+    </section>
+  </div>
+</section>
+
+<!-- 報表 -->
+<section class="view" id="view-report" aria-labelledby="h-report" hidden>
+  <h2 id="h-report">報表</h2>
+  <div class="narrow">
+    <div class="seg" role="group" aria-label="報表期間">
+      <button type="button" class="btn" data-testid="report-mode-day" data-mode="day" aria-pressed="false">日</button>
+      <button type="button" class="btn" data-testid="report-mode-week" data-mode="week" aria-pressed="false">週</button>
+      <button type="button" class="btn" data-testid="report-mode-month" data-mode="month" aria-pressed="true">月</button>
+    </div>
+    <div class="pager">
+      <button type="button" class="btn" data-testid="report-prev" id="report-prev">上一期</button>
+      <p id="report-title" aria-live="polite"></p>
+      <button type="button" class="btn" data-testid="report-next" id="report-next">下一期</button>
+    </div>
+    <dl class="totals">
+      <div><dt>收入</dt><dd data-testid="report-income" id="report-income">$0</dd></div>
+      <div><dt>支出</dt><dd data-testid="report-expense" id="report-expense">$0</dd></div>
+      <div class="grand"><dt>結餘</dt><dd data-testid="report-balance" id="report-balance">$0</dd></div>
+    </dl>
+    <p class="missing" data-testid="report-missing" id="report-missing">沒有漏記</p>
+    <div class="block" id="report-body"></div>
+  </div>
+</section>
+
+<!-- 成本售價 -->
+<section class="view" id="view-cost" aria-labelledby="h-cost" hidden>
+  <h2 id="h-cost">成本售價</h2>
+  <p class="hint">成本只用你填的配方和最近一次進貨價來算，不會自己猜數字。</p>
+  <div class="cols">
+    <section class="block" aria-labelledby="h-prod">
+      <h3 id="h-prod">口味</h3>
+      <div id="prod-list"></div>
+      <form id="prod-form" novalidate>
+        <p class="lbl">新增口味</p>
+        <div class="field">
+          <label for="prod-name">口味名稱</label>
+          <input type="text" id="prod-name" data-testid="prod-name" autocomplete="off" aria-describedby="prod-name-err">
+          <span class="err" id="prod-name-err"></span>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="prod-price">售價（元）</label>
+            <input type="text" inputmode="numeric" id="prod-price" data-testid="prod-price" autocomplete="off" aria-describedby="prod-price-err">
+            <span class="err" id="prod-price-err"></span>
+          </div>
+          <div class="field">
+            <label for="prod-margin">目標毛利（%）</label>
+            <input type="text" inputmode="decimal" id="prod-margin" data-testid="prod-margin" autocomplete="off" placeholder="0–95" aria-describedby="prod-margin-err">
+            <span class="err" id="prod-margin-err"></span>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-wide" data-testid="prod-add">新增口味</button>
+      </form>
+    </section>
+    <section class="block" aria-labelledby="h-ing">
+      <h3 id="h-ing">食材</h3>
+      <p class="hint">食材名稱要和進貨時填的「品項」完全一樣，才對得上進貨價和庫存。</p>
+      <ul class="lines" id="ing-list"></ul>
+      <form id="ing-form" novalidate>
+        <p class="lbl">新增食材</p>
+        <div class="field">
+          <label for="ing-name">食材名稱</label>
+          <input type="text" id="ing-name" data-testid="ing-name" list="item-datalist" autocomplete="off" aria-describedby="ing-name-err">
+          <datalist id="item-datalist"></datalist>
+          <span class="err" id="ing-name-err"></span>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="ing-unit">單位</label>
+            <input type="text" id="ing-unit" data-testid="ing-unit" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="ing-threshold">補貨門檻（可不填）</label>
+            <input type="text" inputmode="decimal" id="ing-threshold" data-testid="ing-threshold" autocomplete="off" aria-describedby="ing-threshold-err">
+            <span class="err" id="ing-threshold-err"></span>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-wide" data-testid="ing-add">新增食材</button>
+      </form>
+    </section>
+  </div>
+</section>
+
+<!-- 庫存 -->
+<section class="view" id="view-stock" aria-labelledby="h-stock" hidden>
+  <h2 id="h-stock">庫存</h2>
+  <p class="hint">剩餘＝進貨總量−你填的用量，是大概的數字。</p>
+  <div class="cols">
+    <section class="block" aria-labelledby="h-stocklist">
+      <h3 id="h-stocklist">各食材剩餘</h3>
+      <div id="stock-list"></div>
+    </section>
+    <section class="block" aria-labelledby="h-usage">
+      <h3 id="h-usage">記錄用掉多少</h3>
+      <form id="usage-form" novalidate>
+        <div class="field">
+          <label for="usage-ing">食材</label>
+          <select id="usage-ing" data-testid="usage-ing" aria-describedby="usage-ing-err"></select>
+          <span class="err" id="usage-ing-err"></span>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="usage-qty">用掉數量</label>
+            <input type="text" inputmode="decimal" id="usage-qty" data-testid="usage-qty" autocomplete="off" aria-describedby="usage-qty-err">
+            <span class="err" id="usage-qty-err"></span>
+          </div>
+          <div class="field">
+            <label for="usage-date">日期</label>
+            <input type="date" id="usage-date">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-wide" data-testid="usage-add">新增用量</button>
+      </form>
+      <h3 style="margin-top:20px">最近的用量紀錄</h3>
+      <ul class="lines" id="usage-list"></ul>
+    </section>
+  </div>
+</section>
+
+<!-- 設定與備份 -->
+<section class="view" id="view-settings" aria-labelledby="h-settings" hidden>
+  <h2 id="h-settings">設定與備份</h2>
+  <div class="narrow">
+    <section class="block" aria-labelledby="h-sum-entry">
+      <h3 id="h-sum-entry">給嘉雲看的摘要</h3>
+      <p class="hint">只能看、不能改的月摘要，可以列印。</p>
+      <a class="btn btn-wide" href="#summary" data-testid="open-summary">打開給嘉雲看的摘要</a>
+    </section>
+    <section class="block" aria-labelledby="h-backup">
+      <h3 id="h-backup">備份</h3>
+      <p class="hint">帳本只存在這支手機（這個瀏覽器）裡，不會上傳到任何地方。換手機或清除瀏覽器資料前，請先匯出備份。備份檔裡有店裡的帳，請只傳給信任的人。</p>
+      <button type="button" class="btn btn-wide" data-testid="export" id="export">匯出備份</button>
+      <div class="field">
+        <label for="import-file">匯入備份（會取代目前的資料）</label>
+        <input type="file" id="import-file" data-testid="import-file" accept=".json,application/json" aria-describedby="import-err">
+        <span class="err" id="import-err" role="alert"></span>
+      </div>
+    </section>
+    <section class="block" aria-labelledby="h-demo">
+      <h3 id="h-demo">範例</h3>
+      <p class="hint">想先看看填好之後長什麼樣子，可以打開範例。範例是假資料，和你的帳本分開存放，不會混在一起。</p>
+      <button type="button" class="btn btn-wide" data-testid="demo-on" id="demo-on">看範例（假例子）</button>
+    </section>
+    <section class="block" aria-labelledby="h-theme">
+      <h3 id="h-theme">畫面顏色</h3>
+      <div class="field">
+        <label for="theme">淺色或深色</label>
+        <select id="theme" data-testid="theme">
+          <option value="system">跟系統</option>
+          <option value="light">淺色（收據紙）</option>
+          <option value="dark">深色（海苔）</option>
+        </select>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- 給嘉雲看的摘要（唯讀） -->
+<section class="view" id="view-summary" aria-labelledby="h-summary" hidden>
+  <h2 id="h-summary">給嘉雲看的摘要</h2>
+  <div class="narrow">
+    <div class="pager no-print">
+      <button type="button" class="btn" id="summary-prev">上個月</button>
+      <button type="button" class="btn" id="summary-print">列印</button>
+      <button type="button" class="btn" id="summary-next">下個月</button>
+    </div>
+    <div data-testid="summary" id="summary-body"></div>
+  </div>
+</section>
+
+</main>
+<div class="toast" role="status" aria-live="polite" data-testid="status" id="status"></div>
+<script>
+"use strict";
+
+const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const blank=()=>({version:1,days:{},purchases:[],expenses:[],ingredients:[],usages:[],products:[]});
+let demo=false, data=blank(), mode='month', anchor, summaryMonth, readOnly=false, rawLedger=null;
+const dateString=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today=()=>dateString(new Date()), parseDate=s=>new Date(Number(s.slice(0,4)),Number(s.slice(5,7))-1,Number(s.slice(8,10))), shift=(s,n)=>{let d=parseDate(s);d.setDate(d.getDate()+n);return dateString(d)}, validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&dateString(parseDate(s))===s;
+const key=()=>demo?'laiyijuan-ledger-demo':'laiyijuan-ledger-v1', uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2), money=n=>(Math.round(n)<0?'-':'')+'$'+Math.abs(Math.round(n)).toLocaleString('zh-TW'), sum=a=>a.reduce((s,n)=>s+n,0);
+function validate(d){
+ const fail=m=>{throw Error(m)}, obj=v=>v&&typeof v==='object'&&!Array.isArray(v), num=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0, str=v=>typeof v==='string';
+ if(!obj(d)||d.version!==1)fail('備份版本必須是 version:1。');
+ if(!obj(d.days))fail('days 必須是日期紀錄物件。');
+ for(const k of ['purchases','expenses','ingredients','usages','products'])if(!Array.isArray(d[k]))fail(k+' 必須是陣列。');
+ for(const [day,v] of Object.entries(d.days))if(!validDate(day)||!obj(v)||!(v.revenue===null||num(v.revenue))||typeof v.closed!=='boolean'||!Array.isArray(v.flavors)||!v.flavors.every(f=>obj(f)&&str(f.name)&&num(f.count))||!str(v.note))fail('每日紀錄的日期、收入、公休、口味或備註格式不正確。');
+ for(const k of ['purchases','expenses','ingredients','usages','products'])for(const v of d[k]){
+ if(!obj(v)||!str(v.id)||!v.id)fail(k+' 缺少識別碼。');
+ if(['purchases','expenses','usages'].includes(k)&&!validDate(v.date))fail(k+' 日期不正確。');
+ if(k==='purchases'&&(!str(v.item)||!v.item.trim()||!str(v.unit)||!num(v.qty)||v.qty===0||!num(v.amount)))fail('進貨的品項、數量、單位或金額不正確。');
+ if(k==='expenses'&&(!str(v.item)||!v.item.trim()||!['房租','水電瓦斯','包材','雜支','其他'].includes(v.category)||!num(v.amount)))fail('支出項目、分類或金額不正確。');
+ if(k==='ingredients'&&(!str(v.name)||!v.name.trim()||!str(v.unit)||!(v.threshold===null||num(v.threshold))))fail('食材名稱、單位或門檻不正確。');
+ if(k==='usages'&&(!str(v.ingredientId)||!num(v.qty)))fail('用量格式不正確。');
+ if(k==='products'&&(!str(v.name)||!v.name.trim()||!num(v.price)||!num(v.targetMargin)||v.targetMargin>95||!Array.isArray(v.recipe)||!v.recipe.every(r=>obj(r)&&str(r.ingredientId)&&num(r.qty))))fail('口味售價、配方或目標毛利（0–95）不正確。');
+ }
+ for(const k of ['ingredients','products','purchases','expenses','usages'])if(new Set(d[k].map(v=>v.id)).size!==d[k].length)fail(k+' 識別碼重複。');
+ for(const r of [...d.usages,...d.products.flatMap(p=>p.recipe)])if(!d.ingredients.some(i=>i.id===r.ingredientId))fail('配方或用量引用不存在的食材。');
+ return d;
+}
+function load(){try{const raw=localStorage.getItem(key());if(!demo)rawLedger=raw;data=raw===null?blank():validate(JSON.parse(raw));if(!demo)readOnly=false}catch(e){data=blank();if(!demo)readOnly=true;status('帳本無法讀取：'+e.message+' 原資料未覆寫，請先保留備份。')}updateProtection()}
+function updateProtection(){ $('read-only-banner').hidden=!readOnly;$('download-raw').disabled=rawLedger===null }
+function recover(d){
+ try{localStorage.setItem('laiyijuan-ledger-v1',JSON.stringify(d))}catch(e){status('無法儲存，仍維持唯讀保護，請檢查瀏覽器儲存空間。');return false}
+ demo=false;data=d;readOnly=false;rawLedger=null;render();status('正式帳本已恢復儲存');return true;
+}
+$('download-raw').onclick=()=>{if(rawLedger===null)return;const url=URL.createObjectURL(new Blob([rawLedger],{type:'text/plain;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='laiyijuan-ledger-original-'+today()+'.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('recover-import').onclick=()=>{if(demo){demo=false;load();render()}};
+$('restart-ledger').onclick=()=>{if(confirm('清空並重新開始？這會取代原本的正式帳本資料，確定繼續？'))recover(blank())};
+let statusTimer;function status(t){$('status').textContent=t;clearTimeout(statusTimer);statusTimer=setTimeout(()=>$('status').textContent='',3000)}
+function persist(){if(readOnly){status('帳本資料讀不出來，為了保護原資料目前不能儲存');return false}try{localStorage.setItem(key(),JSON.stringify(data));return true}catch(e){status('無法儲存，請檢查瀏覽器儲存空間並匯出備份。');return false}}
+function commit(t='已儲存'){const saved=persist();render();if(saved)status(t)}
+function error(el,msg){if(typeof el==='string')el=$(el);let id=el.id+'-err', box=$(id);if(!box){box=document.createElement('span');box.id=id;box.className='err';el.after(box);el.setAttribute('aria-describedby',id)}box.textContent=msg;el.setAttribute('aria-invalid',msg?'true':'false');return !msg}
+function number(el,{optional=false,positive=false,max=Infinity}={}){if(typeof el==='string')el=$(el);let v=el.value.trim(),n=Number(v);if(!v&&optional){error(el,'');return null}if(!v||!Number.isFinite(n)||n<0||(positive&&n<=0)||n>max){error(el,max===95?'請填 0–95 的目標毛利。':positive?'請填大於 0 的數字。':'請填非負數字。');return undefined}error(el,'');return n}
+function required(el){if(typeof el==='string')el=$(el);return error(el,el.value.trim()?'':'請填寫這個欄位。')}
+function selectedDay(){return error('day-date',validDate($('day-date').value)?'':'請選擇有效日期。')}
+const firstDate=()=>Object.keys(data.days).concat(data.purchases.map(x=>x.date),data.expenses.map(x=>x.date),data.usages.map(x=>x.date)).sort()[0];
+function missing(d){const first=firstDate(),v=data.days[d];return !!first&&d>=first&&d<=today()&&!v?.closed&&(v?.revenue==null)}
+function totals(a,b){let income=sum(Object.entries(data.days).filter(([d])=>d>=a&&d<=b).map(([,v])=>v.revenue??0)), expense=sum([...data.purchases,...data.expenses].filter(x=>x.date>=a&&x.date<=b).map(x=>x.amount));return {income,expense,balance:income-expense}}
+function dates(a,b){let out=[];for(let d=a;d<=b;d=shift(d,1))out.push(d);return out}
+function period(a,m){let d=parseDate(a);if(m==='day')return[a,a];if(m==='week'){let s=shift(a,-((d.getDay()+6)%7));return[s,shift(s,6)]}return[dateString(new Date(d.getFullYear(),d.getMonth(),1)),dateString(new Date(d.getFullYear(),d.getMonth()+1,0))]}
+function monthShift(a,n){let d=parseDate(a);return dateString(new Date(d.getFullYear(),d.getMonth()+n,1))}
+function stock(i){let incoming=sum(data.purchases.filter(p=>p.item===i.name).map(p=>p.qty)),used=sum(data.usages.filter(u=>u.ingredientId===i.id).map(u=>u.qty)),remaining=Number((incoming-used).toFixed(6));return{incoming,used,remaining,low:i.threshold!==null&&remaining<=i.threshold}}
+function cost(p){let value=0,unknown=[];for(const r of p.recipe){let i=data.ingredients.find(i=>i.id===r.ingredientId), latest;for(const q of data.purchases)if(q.item===i?.name&&(!latest||q.date>=latest.date))latest=q;if(!latest)unknown.push(i?.name??'已移除食材');else value+=r.qty*latest.amount/latest.qty}return {value,unknown,suggest:Math.ceil(value/(1-p.targetMargin/100)-1e-9)}}
+function costText(p){let c=cost(p);return c.unknown.length?'缺少'+c.unknown.join('、')+'的進貨價，無法計算':p.recipe.length?c.value.toFixed(1):'尚未設定配方，無法計算'}
+function alertText(p){let c=cost(p);if(c.unknown.length||!p.recipe.length)return '';return p.price<c.value?`售價低於成本，每賣一條虧 ${(c.value-p.price).toFixed(1)} 元`:p.price<c.suggest?'低於目標毛利':''}
+function dayLine(d,test=''){if(d>today())return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}</span><span class="num">—</span></li>`;let t=totals(d,d),v=data.days[d];return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}${v?.closed?'　公休':''}</span><span class="num">${money(t.balance)}</span><div class="line-sub"><span>收入 ${money(t.income)}</span><span>支出 ${money(t.expense)}</span><span>結餘 ${money(t.balance)}</span>${missing(d)?'<strong>這天沒有記錄</strong>':''}${v?.flavors?.map(f=>`<span>${esc(f.name)}：${f.count} 條</span>`).join('')||''}</div></li>`}
+function options(){return '<option value="">請選食材</option>'+data.ingredients.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}（${esc(i.unit)}）</option>`).join('')}
+function field(id,label,value='',test='',type='text'){return `<div class="field"><label for="${esc(id)}">${esc(label)}</label><input id="${esc(id)}" ${test?`data-testid="${test}"`:''} type="${type}" inputmode="decimal" value="${esc(value)}" aria-describedby="${esc(id)}-err"><span class="err" id="${esc(id)}-err"></span></div>`}
+function renderToday(){let d=$('day-date').value,v=data.days[d];$('day-revenue').value=v?.revenue??'';$('day-note').value=v?.note??'';$('day-state').textContent=v?.closed?'這天公休':missing(d)?'這天沒有記錄':'';$('day-closed').setAttribute('aria-pressed',String(!!v?.closed));$('day-closed').textContent=v?.closed?'取消公休':'今天公休';
+ $('flavors-box').innerHTML=data.products.map((p,n)=>field('flavor-'+n,p.name,v?.flavors.find(f=>f.name===p.name)?.count??'','flavor-count','number').replace('data-testid="flavor-count"',`data-testid="flavor-count" data-flavor="${esc(p.name)}"`)).join('')||'<p class="hint">尚未建立口味，可到成本售價新增。</p>';
+ for(const [k,id] of [['purchases','purchase'],['expenses','expense']]){$(id+'-list').innerHTML=data[k].filter(x=>x.date===d).map(x=>`<li data-testid="${id==='purchase'?'purchase-row':'expense-row'}"><span>${esc(x.item)}</span><span class="num">${money(x.amount)}</span><div class="line-sub">${k==='purchases'?`${x.qty} ${esc(x.unit)}`:esc(x.category)}</div><button type="button" class="btn btn-del" data-testid="row-delete" data-delete="${k}" data-id="${esc(x.id)}">刪除</button></li>`).join('')}
+ $('recent-list').innerHTML=Array.from({length:7},(_,i)=>dayLine(shift(today(),-i),'recent-row')).join('');let low=data.ingredients.filter(i=>stock(i).low);$('home-stock').innerHTML=low.length?`<div class="notice" data-testid="home-stock-alert"><b>該補貨了</b>：${low.map(i=>esc(i.name)).join('、')}</div>`:'';
+ $('ing-datalist').innerHTML=data.ingredients.map(i=>`<option value="${esc(i.name)}"></option>`).join('');
+}
+function reportRows(a,b,test=true){let out='';for(const d of dates(a,b)){out+=dayLine(d,test?'report-day-row':'');if(parseDate(d).getDay()===0||d===b){let w=period(d,'week'),s=w[0]<a?a:w[0],t=totals(s,d);out+=`<li class="weekrow" ${test?'data-testid="report-week-row"':''}><span>每週小計 ${s}～${d}</span><span class="num">${money(t.balance)}</span><div class="line-sub">收入 ${money(t.income)}　支出 ${money(t.expense)}　結餘 ${money(t.balance)}</div></li>`}}return `<ul class="lines">${out}</ul>`}
+function renderReport(){let[a,b]=period(anchor,mode),t=totals(a,b),n=dates(a,b).filter(missing).length;$('report-title').textContent=a===b?a:a+' ～ '+b;for(const k of ['income','expense','balance'])$('report-'+k).textContent=money(t[k]);$('report-missing').textContent=n?`本${{day:'日',week:'週',month:'月'}[mode]}有 ${n} 天沒有記錄`:'沒有漏記';$('report-body').innerHTML=reportRows(a,b);document.querySelectorAll('[data-mode]').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.mode===mode)))}
+function renderCost(){
+ $('item-datalist').innerHTML=[...new Set(data.purchases.map(p=>p.item))].map(n=>`<option value="${esc(n)}"></option>`).join('');
+ $('ing-list').innerHTML=data.ingredients.map((i,n)=>`<li data-testid="ing-row" data-name="${esc(i.name)}"><strong>${esc(i.name)}</strong><span>${esc(i.unit)}</span><div class="line-sub">補貨門檻：${i.threshold??'未設定'}</div><details class="line-sub"><summary class="btn">編輯食材</summary><form data-ing-edit="${esc(i.id)}">${field('in-'+n,'食材名稱',i.name)}${field('iu-'+n,'單位',i.unit)}${field('it-'+n,'補貨門檻（可不填）',i.threshold??'')}<button class="btn" type="submit">儲存食材</button></form></details><button class="btn btn-del" type="button" data-delete="ingredients" data-id="${esc(i.id)}">刪除食材</button></li>`).join('')||'<li>尚未建立食材。</li>';
+ $('prod-list').innerHTML=data.products.map((p,n)=>{let c=cost(p),a=alertText(p);return `<article class="item" data-testid="prod-row" data-name="${esc(p.name)}"><h4>${esc(p.name)}</h4><div class="kv"><span>每條成本（元）</span><span data-testid="prod-cost">${esc(costText(p))}</span></div><div class="kv"><span>建議售價（元）</span><span class="num" data-testid="prod-suggest">${c.unknown.length||!p.recipe.length?'—':c.suggest}</span></div>${a?`<div data-testid="prod-alert" class="${p.price<c.value?'stampwrap':'mild'}">${p.price<c.value?'<span class="stamp">':''}${esc(a)}${p.price<c.value?'</span>':''}</div>`:''}${field('price-'+n,'目前售價（元）',p.price,'prod-price-edit')}${field('margin-'+n,'目標毛利（%，0–95）',p.targetMargin)}<ul class="lines">${p.recipe.map((r,j)=>`<li><span>${esc(data.ingredients.find(i=>i.id===r.ingredientId)?.name)}：${r.qty}</span><button type="button" class="btn btn-del" data-recipe-delete="${esc(p.id)}" data-index="${j}">移除</button></li>`).join('')}</ul><form data-recipe="${esc(p.id)}"><div class="field"><label for="ri-${n}">配方食材</label><select id="ri-${n}" data-testid="recipe-ing">${options()}</select></div>${field('rq-'+n,'每條用量','','recipe-qty')}<button type="submit" class="btn" data-testid="recipe-add">加入配方</button></form><button type="button" class="btn btn-del" data-delete="products" data-id="${esc(p.id)}">刪除口味</button></article>`}).join('')||'<p class="hint">尚未建立口味。</p>';
+ data.products.forEach((p,n)=>{ $('price-'+n).onchange=()=>{let v=number('price-'+n);if(v!==undefined){p.price=v;commit('已更新售價')}};$('margin-'+n).onchange=()=>{let v=number('margin-'+n,{max:95});if(v!==undefined){p.targetMargin=v;commit('已更新目標毛利')}} });
+}
+function renderStock(){ $('stock-list').innerHTML=data.ingredients.map(i=>{let s=stock(i);return `<article class="item" data-testid="stock-row" data-name="${esc(i.name)}"><h4>${esc(i.name)}</h4><p>進貨 ${s.incoming} ${esc(i.unit)}／用量 ${s.used} ${esc(i.unit)}</p><div class="kv"><span>剩餘（${esc(i.unit)}）</span><strong class="num" data-testid="stock-remaining">${s.remaining}</strong></div><p>門檻：${i.threshold??'未設定'}</p>${s.low?'<p class="tag" data-testid="stock-alert">該補貨了</p>':''}</article>`}).join('')||'<p>尚未建立食材，請先到成本售價新增。</p>';$('usage-ing').innerHTML=options();$('usage-list').innerHTML=data.usages.slice().reverse().map(u=>`<li><span>${u.date} ${esc(data.ingredients.find(i=>i.id===u.ingredientId)?.name)}</span><span>${u.qty}</span><button type="button" class="btn btn-del" data-delete="usages" data-id="${esc(u.id)}">刪除用量</button></li>`).join('')}
+function renderSummary(){let[a,b]=period(summaryMonth,'month'),t=totals(a,b),miss=dates(a,b).filter(missing);$('summary-body').innerHTML=`<h3>${a.slice(0,7)} 月摘要</h3><dl class="totals">${[['收入',t.income],['支出',t.expense],['結餘',t.balance]].map(([k,v])=>`<div><dt>${k}</dt><dd>${money(v)}</dd></div>`).join('')}</dl><section class="block"><h3>沒記錄的天數：${miss.length}</h3><p>${miss.length?miss.join('、')+'：這天沒有記錄':'沒有漏記'}</p></section><section class="block"><h3>補貨提醒</h3><p>${data.ingredients.filter(i=>stock(i).low).map(i=>esc(i.name)+' 該補貨了（剩餘 '+stock(i).remaining+' '+esc(i.unit)+'）').join('、')||'目前沒有需要補貨的食材。'}</p></section><section class="block"><h3>各口味成本與售價</h3>${data.products.map(p=>`<div class="item"><h4>${esc(p.name)}</h4><p>成本：${esc(costText(p))}／售價：${money(p.price)}</p><p>建議售價：${cost(p).unknown.length||!p.recipe.length?'無法計算':money(cost(p).suggest)} ${esc(alertText(p))}</p></div>`).join('')||'<p>尚無口味。</p>'}</section><section class="block"><h3>每天與每週小計</h3>${reportRows(a,b,false)}</section>`}
+function render(){renderToday();renderReport();renderCost();renderStock();renderSummary();$('demo-banner').hidden=!demo;updateProtection()}
+function route(){let name=location.hash.slice(1);if(!['today','report','cost','stock','settings','summary'].includes(name))name='today';document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!=='view-'+name);document.querySelectorAll('[data-nav]').forEach(e=>{if(e.dataset.nav===name)e.setAttribute('aria-current','page');else e.removeAttribute('aria-current')});render();window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0))}
+document.addEventListener('submit',e=>{if(readOnly){e.preventDefault();e.stopImmediatePropagation();status('唯讀保護中，請先匯入備份或清空並重新開始。')}},true);
+document.addEventListener('click',e=>{if(readOnly&&e.target.closest('[data-delete],[data-recipe-delete],#day-closed')){e.preventDefault();e.stopImmediatePropagation();status('唯讀保護中，無法修改帳本。')}},true);
+document.addEventListener('change',e=>{if(readOnly&&/^(price|margin)-/.test(e.target.id)){e.stopImmediatePropagation();renderCost();status('唯讀保護中，無法修改帳本。')}},true);
+$('day-form').onsubmit=e=>{e.preventDefault();let r=number('day-revenue',{optional:true}),ok=selectedDay(),flavors=[];document.querySelectorAll('[data-testid="flavor-count"]').forEach(el=>{let n=number(el,{optional:true});if(n===undefined||n!==null&&!Number.isInteger(n)){error(el,'請填非負整數條數。');ok=false}else if(n!==null)flavors.push({name:el.dataset.flavor,count:n})});if(!ok||r===undefined)return;let d=$('day-date').value;data.days[d]={revenue:r,closed:data.days[d]?.closed??false,flavors,note:$('day-note').value};commit('這一天已儲存')};
+$('day-date').onchange=()=>{if(selectedDay())renderToday()};
+$('day-closed').onclick=()=>{if(!selectedDay())return;let d=$('day-date').value,v=data.days[d]??{revenue:null,closed:false,flavors:[],note:''};v.closed=!v.closed;data.days[d]=v;commit(v.closed?'已標為公休':'已取消公休')};
+$('flavors-toggle').onclick=()=>{let open=$('flavors-box').hidden;$('flavors-box').hidden=!open;$('flavors-toggle').setAttribute('aria-expanded',String(open))};
+$('purchase-item').onchange=()=>{let i=data.ingredients.find(i=>i.name===$('purchase-item').value);if(i)$('purchase-unit').value=i.unit};
+$('purchase-form').onsubmit=e=>{e.preventDefault();let q=number('purchase-qty',{positive:true}),a=number('purchase-amount'),ok=required('purchase-item'),d=selectedDay();if(!ok||!d||q===undefined||a===undefined)return;data.purchases.push({id:uid(),date:$('day-date').value,item:$('purchase-item').value.trim(),qty:q,unit:$('purchase-unit').value.trim(),amount:a});e.target.reset();commit('已新增進貨')};
+$('expense-form').onsubmit=e=>{e.preventDefault();let a=number('expense-amount'),ok=required('expense-item'),d=selectedDay();if(!ok||!d||a===undefined)return;data.expenses.push({id:uid(),date:$('day-date').value,category:$('expense-category').value,item:$('expense-item').value.trim(),amount:a});e.target.reset();commit('已新增支出')};
+$('ing-form').onsubmit=e=>{e.preventDefault();let n=number('ing-threshold',{optional:true}),ok=required('ing-name');if(data.ingredients.some(i=>i.name===$('ing-name').value.trim())){error('ing-name','食材名稱已存在。');ok=false}if(!ok||n===undefined)return;data.ingredients.push({id:uid(),name:$('ing-name').value.trim(),unit:$('ing-unit').value.trim(),threshold:n});e.target.reset();commit('已新增食材')};
+$('prod-form').onsubmit=e=>{e.preventDefault();let p=number('prod-price'),m=number('prod-margin',{max:95}),ok=required('prod-name');if(data.products.some(p=>p.name===$('prod-name').value.trim())){error('prod-name','口味名稱已存在。');ok=false}if(!ok||p===undefined||m===undefined)return;data.products.push({id:uid(),name:$('prod-name').value.trim(),price:p,targetMargin:m,recipe:[]});e.target.reset();commit('已新增口味')};
+$('usage-form').onsubmit=e=>{e.preventDefault();let q=number('usage-qty',{positive:true}),ok=required('usage-ing'),d=error('usage-date',validDate($('usage-date').value)?'':'請選有效日期。');if(!ok||!d||q===undefined)return;data.usages.push({id:uid(),date:$('usage-date').value,ingredientId:$('usage-ing').value,qty:q});$('usage-qty').value='';commit('已記錄用量')};
+document.addEventListener('submit',e=>{let f=e.target;if(f.dataset.recipe){e.preventDefault();let sel=f.querySelector('select'),qty=f.querySelector('input'),q=number(qty,{positive:true}),ok=required(sel);if(!ok||q===undefined)return;data.products.find(p=>p.id===f.dataset.recipe).recipe.push({ingredientId:sel.value,qty:q});commit('已加入配方')}if(f.dataset.ingEdit){e.preventDefault();let [name,unit,threshold]=f.querySelectorAll('input'),n=number(threshold,{optional:true}),ok=required(name),i=data.ingredients.find(i=>i.id===f.dataset.ingEdit);if(data.ingredients.some(x=>x.id!==i.id&&x.name===name.value.trim())){error(name,'食材名稱已存在。');ok=false}if(!ok||n===undefined)return;i.name=name.value.trim();i.unit=unit.value.trim();i.threshold=n;commit('已更新食材')}});
+document.addEventListener('click',e=>{let b=e.target.closest('[data-delete],[data-recipe-delete]');if(!b)return;if(!confirm('確定刪除這筆紀錄？'))return;if(b.dataset.delete){let k=b.dataset.delete;if(k==='ingredients'&&(data.usages.some(u=>u.ingredientId===b.dataset.id)||data.products.some(p=>p.recipe.some(r=>r.ingredientId===b.dataset.id)))){status('食材仍有配方或用量引用，請先移除引用。');return}data[k]=data[k].filter(x=>x.id!==b.dataset.id)}else data.products.find(p=>p.id===b.dataset.recipeDelete).recipe.splice(Number(b.dataset.index),1);commit('已刪除')});
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;anchor=today();renderReport()});
+function moveReport(n){anchor=mode==='month'?monthShift(anchor,n):shift(anchor,n*(mode==='week'?7:1));renderReport()}
+$('report-prev').onclick=()=>moveReport(-1);$('report-next').onclick=()=>moveReport(1);
+$('export').onclick=()=>{let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='laiyijuan-backup-'+today()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status('已匯出備份')};
+$('import-file').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{let d;try{d=JSON.parse(await file.text())}catch{throw Error('不是有效的 JSON 檔案。')}validate(d);if(!confirm('匯入會取代目前'+(demo&&!readOnly?'範例':'正式')+'帳本資料，確定匯入？'))return;if(readOnly){if(!recover(d))throw Error('備份未能儲存，原資料仍受保護。')}else{data=d;commit('已匯入備份');}$('import-err').textContent='';$('import-file').setAttribute('aria-invalid','false')}catch(err){$('import-err').textContent='匯入失敗：'+err.message;$('import-file').setAttribute('aria-invalid','true')}finally{e.target.value=''}};
+function demoData(){
+ const d=blank(),date=today();
+ d.ingredients=[
+  {id:'demo-rice',name:'白米（假例子）',unit:'g',threshold:1000},
+  {id:'demo-egg',name:'雞蛋（假例子）',unit:'顆',threshold:20},
+  {id:'demo-seaweed',name:'海苔（假例子）',unit:'張',threshold:40},
+  {id:'demo-cheese',name:'起司（假例子）',unit:'片',threshold:null}
+ ];
+ d.products=[
+  {id:'demo-original',name:'原味飯捲（假例子）',price:65,targetMargin:60,recipe:[{ingredientId:'demo-rice',qty:150},{ingredientId:'demo-seaweed',qty:1}]},
+  {id:'demo-egg-roll',name:'蛋香飯捲（假例子）',price:20,targetMargin:60,recipe:[{ingredientId:'demo-rice',qty:150},{ingredientId:'demo-egg',qty:2},{ingredientId:'demo-seaweed',qty:1}]},
+  {id:'demo-cheese-roll',name:'起司飯捲（假例子）',price:75,targetMargin:60,recipe:[{ingredientId:'demo-rice',qty:150},{ingredientId:'demo-cheese',qty:1},{ingredientId:'demo-seaweed',qty:1}]}
+ ];
+ // 含今天共 28 天；兩天漏記、一天公休，其餘都有範例收入。
+ for(let i=0;i<28;i++){
+  const day=shift(date,i-27);
+  if(i===22||i===25)continue;
+  const closed=i===24;
+  d.days[day]={revenue:closed?0:2600+(i*137%1700),closed,
+   flavors:!closed&&i%3!==0?d.products.map((p,j)=>({name:p.name,count:12+(i*3+j*7)%18})):[],
+   note:closed?'範例公休（假例子）':'範例營業紀錄（假例子）'};
+ }
+ // 四週各兩筆進貨；起司刻意沒有進貨價。
+ for(let w=0;w<4;w++){
+  const i=w===0?0:w===1?1:w===2?2:0,ingredient=d.ingredients[i];
+  d.purchases.push({id:'demo-p-'+w+'a',date:shift(date,-27+w*7),item:ingredient.name,qty:i===0?20000:i===1?200:300,unit:ingredient.unit,amount:i===0?1400:i===1?1200:750});
+  const rice=d.ingredients[0];
+  d.purchases.push({id:'demo-p-'+w+'b',date:shift(date,-24+w*7),item:rice.name,qty:15000,unit:rice.unit,amount:1050});
+ }
+ d.expenses=[
+  {id:'demo-rent',date:shift(date,-26),category:'房租',item:'範例店面房租（假例子）',amount:18000},
+  {id:'demo-utilities',date:shift(date,-14),category:'水電瓦斯',item:'範例水電瓦斯（假例子）',amount:3200},
+  {id:'demo-packaging',date:shift(date,-7),category:'包材',item:'範例紙袋餐盒（假例子）',amount:960}
+ ];
+ d.usages=[
+  {id:'demo-u1',date:shift(date,-20),ingredientId:'demo-rice',qty:22000},
+  {id:'demo-u2',date:shift(date,-8),ingredientId:'demo-rice',qty:28000},
+  {id:'demo-u3',date:shift(date,-3),ingredientId:'demo-egg',qty:120},
+  {id:'demo-u4',date:shift(date,-1),ingredientId:'demo-seaweed',qty:275}
+ ];
+ return d;
+}
+$('demo-on').onclick=()=>{demo=true;data=demoData();persist();render();status('現在看的是範例資料（假例子）')};$('demo-off').onclick=()=>{demo=false;load();render();status('已回到我的帳本')};
+try{$('theme').value=localStorage.getItem('laiyijuan-theme')||'system'}catch(e){$('theme').value='system'};$('theme').onchange=e=>{let t=e.target.value;if(!readOnly)try{localStorage.setItem('laiyijuan-theme',t)}catch(e){status('無法儲存外觀設定。')};if(t==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=t};
+$('summary-prev').onclick=()=>{summaryMonth=monthShift(summaryMonth,-1);renderSummary()};$('summary-next').onclick=()=>{summaryMonth=monthShift(summaryMonth,1);renderSummary()};$('summary-print').onclick=()=>window.print();
+anchor=summaryMonth=today();$('day-date').value=$('usage-date').value=today();load();window.addEventListener('hashchange',route);window.addEventListener('load',()=>window.scrollTo(0,0));route();
+
+</script>
+</body>
+</html>
