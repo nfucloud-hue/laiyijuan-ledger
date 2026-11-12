@@ -14,6 +14,7 @@
 :root{
   --paper:#f6f1e4; --paper2:#fcf9f0; --ink:#1d1b16; --muted:#585244;
   --line:#857d6c; --red:#b3261e; --yellow:#d9a520;
+  --nori:#1f4a32; --gold-text:#755a08;
   --banner-bg:#b3261e; --banner-fg:#f6f1e4; --banner-btn-fg:#1d1b16;
   --sans:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,"PingFang TC","Noto Sans TC","Microsoft JhengHei",monospace;
@@ -22,12 +23,14 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:#0f1b15; --paper2:#17271e; --ink:#efe6cf; --muted:#beb69d;
-    --line:#748070; --red:#ff917c; --yellow:#e3b341; color-scheme:dark;
+    --line:#748070; --red:#ff917c; --yellow:#e3b341;
+    --nori:#8fbf9a; --gold-text:#e3b341; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --paper:#0f1b15; --paper2:#17271e; --ink:#efe6cf; --muted:#beb69d;
-  --line:#748070; --red:#ff917c; --yellow:#e3b341; color-scheme:dark;
+  --line:#748070; --red:#ff917c; --yellow:#e3b341;
+  --nori:#8fbf9a; --gold-text:#e3b341; color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none !important}
@@ -55,7 +58,7 @@ ul,ol{list-style:none}
 /* 小票表頭 */
 .masthead{text-align:center;padding:20px 16px 0;max-width:1100px;margin:0 auto}
 .masthead h1{font-size:1.75rem;letter-spacing:.5em;text-indent:.5em;font-weight:800;line-height:1.3}
-.masthead .sub{letter-spacing:.2em;text-indent:.2em;color:var(--muted);font-size:1rem;
+.masthead .sub{letter-spacing:.2em;text-indent:.2em;color:var(--nori);font-size:1rem;
   padding-bottom:10px;border-bottom:4px double var(--ink)}
 
 /* 導覽 */
@@ -69,10 +72,15 @@ ul,ol{list-style:none}
 /* 主要內容 */
 main{max-width:1100px;margin:0 auto;padding:8px 16px 24px}
 .view>h2{font-size:1.35rem;margin:16px 0 4px;letter-spacing:.08em}
-.view>h2::before{content:"";display:inline-block;width:8px;height:.9em;background:var(--yellow);margin-right:8px;vertical-align:-1px}
+.view>h2::before,.view h3::before,.lbl::before{content:"";display:inline-block;width:8px;height:.9em;background:var(--yellow);margin-right:8px;vertical-align:-1px}
+.view h3::before,.lbl::before{width:6px;height:.8em}
 .block{border-top:2px dashed var(--line);padding:16px 0;margin-top:16px;min-width:0}
-.block>h3{font-size:1.15rem;margin-bottom:8px;letter-spacing:.05em}
+.block>h3,.view h3{font-size:1.15rem;margin-bottom:8px;letter-spacing:.05em}
 .hint{color:var(--muted);font-size:1rem;margin:4px 0}
+.opt{color:var(--gold-text);font-weight:700}
+.empty-msg,.hint.empty-msg{color:var(--nori);font-weight:700}
+.miss,#day-state.is-missing,.missing.is-missing{color:var(--red);font-weight:700}
+#day-state.is-closed,.missing.is-ok{color:var(--nori);font-weight:700}
 
 /* 表單 */
 .field{display:flex;flex-direction:column;gap:4px;min-width:0;margin:10px 0}
@@ -132,6 +140,9 @@ details.line-sub{display:block;min-width:0;width:100%}
 .totals>div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:1.15rem}
 .totals dd{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
 .totals>div.grand{border-top:4px double var(--ink);margin-top:4px;padding-top:10px;font-size:1.4rem;font-weight:800}
+.totals .amt-income dd{color:var(--nori)}
+.totals .amt-expense dd{color:var(--red)}
+.totals .amt-balance dd{color:var(--gold-text)}
 
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:12px 0}
 .seg .btn+.btn{border-left-width:0}
@@ -189,12 +200,12 @@ details.line-sub{display:block;min-width:0;width:100%}
   .stamp,.tag,.notice,.demo-banner,.toast{border-color:CanvasText}
   .nav a[aria-current="page"]{border-color:Highlight}
   :focus-visible{outline-color:Highlight}
-  .view>h2::before{background:CanvasText}
+  .view>h2::before,.view h3::before,.lbl::before{background:CanvasText}
 }
 
 @media print{
   :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
-    --paper:#fff; --paper2:#fff; --ink:#000; --muted:#000; --line:#000; --red:#000; --yellow:#000}
+    --paper:#fff; --paper2:#fff; --ink:#000; --muted:#000; --line:#000; --red:#000; --yellow:#000; --nori:#000; --gold-text:#000}
   body{background:#fff;color:#000;padding:0;font-size:12pt}
   .nav,.skip,.toast,.no-print{display:none !important}
   .demo-banner{position:static;background:#fff;color:#000;border:2px solid #000}
@@ -251,10 +262,10 @@ details.line-sub{display:block;min-width:0;width:100%}
         <input type="text" inputmode="numeric" autocomplete="off" class="big" id="day-revenue" data-testid="day-revenue" placeholder="0" aria-describedby="day-revenue-err">
         <span class="err" id="day-revenue-err"></span>
       </div>
-      <button type="button" class="btn toggle" id="flavors-toggle" data-testid="flavors-toggle" aria-expanded="false" aria-controls="flavors-box">各口味條數（可不填）</button>
+      <button type="button" class="btn toggle" id="flavors-toggle" data-testid="flavors-toggle" aria-expanded="false" aria-controls="flavors-box"><span>各口味條數<span class="opt">（可不填）</span></span></button>
       <div id="flavors-box" hidden></div>
       <div class="field">
-        <label for="day-note">備註（可不填）</label>
+        <label for="day-note">備註<span class="opt">（可不填）</span></label>
         <input type="text" id="day-note" autocomplete="off">
       </div>
       <div class="btn-row">
@@ -338,9 +349,9 @@ details.line-sub{display:block;min-width:0;width:100%}
       <button type="button" class="btn" data-testid="report-next" id="report-next">下一期</button>
     </div>
     <dl class="totals">
-      <div><dt>收入</dt><dd data-testid="report-income" id="report-income">$0</dd></div>
-      <div><dt>支出</dt><dd data-testid="report-expense" id="report-expense">$0</dd></div>
-      <div class="grand"><dt>結餘</dt><dd data-testid="report-balance" id="report-balance">$0</dd></div>
+      <div class="amt-income"><dt>收入</dt><dd data-testid="report-income" id="report-income">$0</dd></div>
+      <div class="amt-expense"><dt>支出</dt><dd data-testid="report-expense" id="report-expense">$0</dd></div>
+      <div class="grand amt-balance"><dt>結餘</dt><dd data-testid="report-balance" id="report-balance">$0</dd></div>
     </dl>
     <p class="missing" data-testid="report-missing" id="report-missing">沒有漏記</p>
     <div class="block" id="report-body"></div>
@@ -395,7 +406,7 @@ details.line-sub{display:block;min-width:0;width:100%}
             <input type="text" id="ing-unit" data-testid="ing-unit" autocomplete="off">
           </div>
           <div class="field">
-            <label for="ing-threshold">補貨門檻（可不填）</label>
+            <label for="ing-threshold">補貨門檻<span class="opt">（可不填）</span></label>
             <input type="text" inputmode="decimal" id="ing-threshold" data-testid="ing-threshold" autocomplete="off" aria-describedby="ing-threshold-err">
             <span class="err" id="ing-threshold-err"></span>
           </div>
@@ -549,25 +560,26 @@ function stock(i){let incoming=sum(data.purchases.filter(p=>p.item===i.name).map
 function cost(p){let value=0,unknown=[];for(const r of p.recipe){let i=data.ingredients.find(i=>i.id===r.ingredientId), latest;for(const q of data.purchases)if(q.item===i?.name&&(!latest||q.date>=latest.date))latest=q;if(!latest)unknown.push(i?.name??'已移除食材');else value+=r.qty*latest.amount/latest.qty}return {value,unknown,suggest:Math.ceil(value/(1-p.targetMargin/100)-1e-9)}}
 function costText(p){let c=cost(p);return c.unknown.length?'缺少'+c.unknown.join('、')+'的進貨價，無法計算':p.recipe.length?c.value.toFixed(1):'尚未設定配方，無法計算'}
 function alertText(p){let c=cost(p);if(c.unknown.length||!p.recipe.length)return '';return p.price<c.value?`售價低於成本，每賣一條虧 ${(c.value-p.price).toFixed(1)} 元`:p.price<c.suggest?'低於目標毛利':''}
-function dayLine(d,test=''){if(d>today())return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}</span><span class="num">—</span></li>`;let t=totals(d,d),v=data.days[d];return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}${v?.closed?'　公休':''}</span><span class="num">${money(t.balance)}</span><div class="line-sub"><span>收入 ${money(t.income)}</span><span>支出 ${money(t.expense)}</span><span>結餘 ${money(t.balance)}</span>${missing(d)?'<strong>這天沒有記錄</strong>':''}${v?.flavors?.map(f=>`<span>${esc(f.name)}：${f.count} 條</span>`).join('')||''}</div></li>`}
+function dayLine(d,test=''){if(d>today())return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}</span><span class="num">—</span></li>`;let t=totals(d,d),v=data.days[d];return `<li ${test?`data-testid="${test}" data-date="${d}"`:''}><span>${d}${v?.closed?'　公休':''}</span><span class="num">${money(t.balance)}</span><div class="line-sub"><span>收入 ${money(t.income)}</span><span>支出 ${money(t.expense)}</span><span>結餘 ${money(t.balance)}</span>${missing(d)?'<strong class="miss">這天沒有記錄</strong>':''}${v?.flavors?.map(f=>`<span>${esc(f.name)}：${f.count} 條</span>`).join('')||''}</div></li>`}
 function options(){return '<option value="">請選食材</option>'+data.ingredients.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}（${esc(i.unit)}）</option>`).join('')}
-function field(id,label,value='',test='',type='text'){return `<div class="field"><label for="${esc(id)}">${esc(label)}</label><input id="${esc(id)}" ${test?`data-testid="${test}"`:''} type="${type}" inputmode="decimal" value="${esc(value)}" aria-describedby="${esc(id)}-err"><span class="err" id="${esc(id)}-err"></span></div>`}
-function renderToday(){let d=$('day-date').value,v=data.days[d];$('day-revenue').value=v?.revenue??'';$('day-note').value=v?.note??'';$('day-state').textContent=v?.closed?'這天公休':missing(d)?'這天沒有記錄':'';$('day-closed').setAttribute('aria-pressed',String(!!v?.closed));$('day-closed').textContent=v?.closed?'取消公休':'今天公休';
- $('flavors-box').innerHTML=data.products.map((p,n)=>field('flavor-'+n,p.name,v?.flavors.find(f=>f.name===p.name)?.count??'','flavor-count','number').replace('data-testid="flavor-count"',`data-testid="flavor-count" data-flavor="${esc(p.name)}"`)).join('')||'<p class="hint">尚未建立口味，可到成本售價新增。</p>';
- for(const [k,id] of [['purchases','purchase'],['expenses','expense']]){$(id+'-list').innerHTML=data[k].filter(x=>x.date===d).map(x=>`<li data-testid="${id==='purchase'?'purchase-row':'expense-row'}"><span>${esc(x.item)}</span><span class="num">${money(x.amount)}</span><div class="line-sub">${k==='purchases'?`${x.qty} ${esc(x.unit)}`:esc(x.category)}</div><button type="button" class="btn btn-del" data-testid="row-delete" data-delete="${k}" data-id="${esc(x.id)}">刪除</button></li>`).join('')}
+function accentLabel(s){return esc(s).replace(/（可不填）/g,'<span class="opt">（可不填）</span>')}
+function field(id,label,value='',test='',type='text'){return `<div class="field"><label for="${esc(id)}">${accentLabel(label)}</label><input id="${esc(id)}" ${test?`data-testid="${test}"`:''} type="${type}" inputmode="decimal" value="${esc(value)}" aria-describedby="${esc(id)}-err"><span class="err" id="${esc(id)}-err"></span></div>`}
+function renderToday(){let d=$('day-date').value,v=data.days[d];$('day-revenue').value=v?.revenue??'';$('day-note').value=v?.note??'';$('day-state').textContent=v?.closed?'這天公休':missing(d)?'這天沒有記錄':'';$('day-state').className='hint'+(v?.closed?' is-closed':missing(d)?' is-missing':'');$('day-closed').setAttribute('aria-pressed',String(!!v?.closed));$('day-closed').textContent=v?.closed?'取消公休':'今天公休';
+ $('flavors-box').innerHTML=data.products.map((p,n)=>field('flavor-'+n,p.name,v?.flavors.find(f=>f.name===p.name)?.count??'','flavor-count','number').replace('data-testid="flavor-count"',`data-testid="flavor-count" data-flavor="${esc(p.name)}"`)).join('')||'<p class="hint empty-msg">尚未建立口味，可到成本售價新增。</p>';
+ for(const [k,id] of [['purchases','purchase'],['expenses','expense']]){$(id+'-list').innerHTML=data[k].filter(x=>x.date===d).map(x=>`<li data-testid="${id==='purchase'?'purchase-row':'expense-row'}"><span>${esc(x.item)}</span><span class="num">${money(x.amount)}</span><div class="line-sub">${k==='purchases'?`${x.qty} ${esc(x.unit)}`:esc(x.category)}</div><button type="button" class="btn btn-del" data-testid="row-delete" data-delete="${k}" data-id="${esc(x.id)}">刪除</button></li>`).join('')||'<li class="empty-msg">還沒有記錄</li>'}
  $('recent-list').innerHTML=Array.from({length:7},(_,i)=>dayLine(shift(today(),-i),'recent-row')).join('');let low=data.ingredients.filter(i=>stock(i).low);$('home-stock').innerHTML=low.length?`<div class="notice" data-testid="home-stock-alert"><b>該補貨了</b>：${low.map(i=>esc(i.name)).join('、')}</div>`:'';
  $('ing-datalist').innerHTML=data.ingredients.map(i=>`<option value="${esc(i.name)}"></option>`).join('');
 }
 function reportRows(a,b,test=true){let out='';for(const d of dates(a,b)){out+=dayLine(d,test?'report-day-row':'');if(parseDate(d).getDay()===0||d===b){let w=period(d,'week'),s=w[0]<a?a:w[0],t=totals(s,d);out+=`<li class="weekrow" ${test?'data-testid="report-week-row"':''}><span>每週小計 ${s}～${d}</span><span class="num">${money(t.balance)}</span><div class="line-sub">收入 ${money(t.income)}　支出 ${money(t.expense)}　結餘 ${money(t.balance)}</div></li>`}}return `<ul class="lines">${out}</ul>`}
-function renderReport(){let[a,b]=period(anchor,mode),t=totals(a,b),n=dates(a,b).filter(missing).length;$('report-title').textContent=a===b?a:a+' ～ '+b;for(const k of ['income','expense','balance'])$('report-'+k).textContent=money(t[k]);$('report-missing').textContent=n?`本${{day:'日',week:'週',month:'月'}[mode]}有 ${n} 天沒有記錄`:'沒有漏記';$('report-body').innerHTML=reportRows(a,b);document.querySelectorAll('[data-mode]').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.mode===mode)))}
+function renderReport(){let[a,b]=period(anchor,mode),t=totals(a,b),n=dates(a,b).filter(missing).length;$('report-title').textContent=a===b?a:a+' ～ '+b;for(const k of ['income','expense','balance'])$('report-'+k).textContent=money(t[k]);$('report-missing').textContent=n?`本${{day:'日',week:'週',month:'月'}[mode]}有 ${n} 天沒有記錄`:'沒有漏記';$('report-missing').classList.toggle('is-missing',n>0);$('report-missing').classList.toggle('is-ok',n===0);$('report-body').innerHTML=reportRows(a,b);document.querySelectorAll('[data-mode]').forEach(e=>e.setAttribute('aria-pressed',String(e.dataset.mode===mode)))}
 function renderCost(){
  $('item-datalist').innerHTML=[...new Set(data.purchases.map(p=>p.item))].map(n=>`<option value="${esc(n)}"></option>`).join('');
- $('ing-list').innerHTML=data.ingredients.map((i,n)=>`<li data-testid="ing-row" data-name="${esc(i.name)}"><strong>${esc(i.name)}</strong><span>${esc(i.unit)}</span><div class="line-sub">補貨門檻：${i.threshold??'未設定'}</div><details class="line-sub"><summary class="btn">編輯食材</summary><form data-ing-edit="${esc(i.id)}">${field('in-'+n,'食材名稱',i.name)}${field('iu-'+n,'單位',i.unit)}${field('it-'+n,'補貨門檻（可不填）',i.threshold??'')}<button class="btn" type="submit">儲存食材</button></form></details><button class="btn btn-del" type="button" data-delete="ingredients" data-id="${esc(i.id)}">刪除食材</button></li>`).join('')||'<li>尚未建立食材。</li>';
- $('prod-list').innerHTML=data.products.map((p,n)=>{let c=cost(p),a=alertText(p);return `<article class="item" data-testid="prod-row" data-name="${esc(p.name)}"><h4>${esc(p.name)}</h4><div class="kv"><span>每條成本（元）</span><span data-testid="prod-cost">${esc(costText(p))}</span></div><div class="kv"><span>建議售價（元）</span><span class="num" data-testid="prod-suggest">${c.unknown.length||!p.recipe.length?'—':c.suggest}</span></div>${a?`<div data-testid="prod-alert" class="${p.price<c.value?'stampwrap':'mild'}">${p.price<c.value?'<span class="stamp">':''}${esc(a)}${p.price<c.value?'</span>':''}</div>`:''}${field('price-'+n,'目前售價（元）',p.price,'prod-price-edit')}${field('margin-'+n,'目標毛利（%，0–95）',p.targetMargin)}<ul class="lines">${p.recipe.map((r,j)=>`<li><span>${esc(data.ingredients.find(i=>i.id===r.ingredientId)?.name)}：${r.qty}</span><button type="button" class="btn btn-del" data-recipe-delete="${esc(p.id)}" data-index="${j}">移除</button></li>`).join('')}</ul><form data-recipe="${esc(p.id)}"><div class="field"><label for="ri-${n}">配方食材</label><select id="ri-${n}" data-testid="recipe-ing">${options()}</select></div>${field('rq-'+n,'每條用量','','recipe-qty')}<button type="submit" class="btn" data-testid="recipe-add">加入配方</button></form><button type="button" class="btn btn-del" data-delete="products" data-id="${esc(p.id)}">刪除口味</button></article>`}).join('')||'<p class="hint">尚未建立口味。</p>';
+ $('ing-list').innerHTML=data.ingredients.map((i,n)=>`<li data-testid="ing-row" data-name="${esc(i.name)}"><strong>${esc(i.name)}</strong><span>${esc(i.unit)}</span><div class="line-sub">補貨門檻：${i.threshold??'未設定'}</div><details class="line-sub"><summary class="btn">編輯食材</summary><form data-ing-edit="${esc(i.id)}">${field('in-'+n,'食材名稱',i.name)}${field('iu-'+n,'單位',i.unit)}${field('it-'+n,'補貨門檻（可不填）',i.threshold??'')}<button class="btn" type="submit">儲存食材</button></form></details><button class="btn btn-del" type="button" data-delete="ingredients" data-id="${esc(i.id)}">刪除食材</button></li>`).join('')||'<li class="empty-msg">尚未建立食材。</li>';
+ $('prod-list').innerHTML=data.products.map((p,n)=>{let c=cost(p),a=alertText(p);return `<article class="item" data-testid="prod-row" data-name="${esc(p.name)}"><h4>${esc(p.name)}</h4><div class="kv"><span>每條成本（元）</span><span data-testid="prod-cost">${esc(costText(p))}</span></div><div class="kv"><span>建議售價（元）</span><span class="num" data-testid="prod-suggest">${c.unknown.length||!p.recipe.length?'—':c.suggest}</span></div>${a?`<div data-testid="prod-alert" class="${p.price<c.value?'stampwrap':'mild'}">${p.price<c.value?'<span class="stamp">':''}${esc(a)}${p.price<c.value?'</span>':''}</div>`:''}${field('price-'+n,'目前售價（元）',p.price,'prod-price-edit')}${field('margin-'+n,'目標毛利（%，0–95）',p.targetMargin)}<ul class="lines">${p.recipe.map((r,j)=>`<li><span>${esc(data.ingredients.find(i=>i.id===r.ingredientId)?.name)}：${r.qty}</span><button type="button" class="btn btn-del" data-recipe-delete="${esc(p.id)}" data-index="${j}">移除</button></li>`).join('')}</ul><form data-recipe="${esc(p.id)}"><div class="field"><label for="ri-${n}">配方食材</label><select id="ri-${n}" data-testid="recipe-ing">${options()}</select></div>${field('rq-'+n,'每條用量','','recipe-qty')}<button type="submit" class="btn" data-testid="recipe-add">加入配方</button></form><button type="button" class="btn btn-del" data-delete="products" data-id="${esc(p.id)}">刪除口味</button></article>`}).join('')||'<p class="hint empty-msg">尚未建立口味。</p>';
  data.products.forEach((p,n)=>{ $('price-'+n).onchange=()=>{let v=number('price-'+n);if(v!==undefined){p.price=v;commit('已更新售價')}};$('margin-'+n).onchange=()=>{let v=number('margin-'+n,{max:95});if(v!==undefined){p.targetMargin=v;commit('已更新目標毛利')}} });
 }
-function renderStock(){ $('stock-list').innerHTML=data.ingredients.map(i=>{let s=stock(i);return `<article class="item" data-testid="stock-row" data-name="${esc(i.name)}"><h4>${esc(i.name)}</h4><p>進貨 ${s.incoming} ${esc(i.unit)}／用量 ${s.used} ${esc(i.unit)}</p><div class="kv"><span>剩餘（${esc(i.unit)}）</span><strong class="num" data-testid="stock-remaining">${s.remaining}</strong></div><p>門檻：${i.threshold??'未設定'}</p>${s.low?'<p class="tag" data-testid="stock-alert">該補貨了</p>':''}</article>`}).join('')||'<p>尚未建立食材，請先到成本售價新增。</p>';$('usage-ing').innerHTML=options();$('usage-list').innerHTML=data.usages.slice().reverse().map(u=>`<li><span>${u.date} ${esc(data.ingredients.find(i=>i.id===u.ingredientId)?.name)}</span><span>${u.qty}</span><button type="button" class="btn btn-del" data-delete="usages" data-id="${esc(u.id)}">刪除用量</button></li>`).join('')}
-function renderSummary(){let[a,b]=period(summaryMonth,'month'),t=totals(a,b),miss=dates(a,b).filter(missing);$('summary-body').innerHTML=`<h3>${a.slice(0,7)} 月摘要</h3><dl class="totals">${[['收入',t.income],['支出',t.expense],['結餘',t.balance]].map(([k,v])=>`<div><dt>${k}</dt><dd>${money(v)}</dd></div>`).join('')}</dl><section class="block"><h3>沒記錄的天數：${miss.length}</h3><p>${miss.length?miss.join('、')+'：這天沒有記錄':'沒有漏記'}</p></section><section class="block"><h3>補貨提醒</h3><p>${data.ingredients.filter(i=>stock(i).low).map(i=>esc(i.name)+' 該補貨了（剩餘 '+stock(i).remaining+' '+esc(i.unit)+'）').join('、')||'目前沒有需要補貨的食材。'}</p></section><section class="block"><h3>各口味成本與售價</h3>${data.products.map(p=>`<div class="item"><h4>${esc(p.name)}</h4><p>成本：${esc(costText(p))}／售價：${money(p.price)}</p><p>建議售價：${cost(p).unknown.length||!p.recipe.length?'無法計算':money(cost(p).suggest)} ${esc(alertText(p))}</p></div>`).join('')||'<p>尚無口味。</p>'}</section><section class="block"><h3>每天與每週小計</h3>${reportRows(a,b,false)}</section>`}
+function renderStock(){ $('stock-list').innerHTML=data.ingredients.map(i=>{let s=stock(i);return `<article class="item" data-testid="stock-row" data-name="${esc(i.name)}"><h4>${esc(i.name)}</h4><p>進貨 ${s.incoming} ${esc(i.unit)}／用量 ${s.used} ${esc(i.unit)}</p><div class="kv"><span>剩餘（${esc(i.unit)}）</span><strong class="num" data-testid="stock-remaining">${s.remaining}</strong></div><p>門檻：${i.threshold??'未設定'}</p>${s.low?'<p class="tag" data-testid="stock-alert">該補貨了</p>':''}</article>`}).join('')||'<p class="empty-msg">尚未建立食材，請先到成本售價新增。</p>';$('usage-ing').innerHTML=options();$('usage-list').innerHTML=data.usages.slice().reverse().map(u=>`<li><span>${u.date} ${esc(data.ingredients.find(i=>i.id===u.ingredientId)?.name)}</span><span>${u.qty}</span><button type="button" class="btn btn-del" data-delete="usages" data-id="${esc(u.id)}">刪除用量</button></li>`).join('')||'<li class="empty-msg">還沒有記錄</li>'}
+function renderSummary(){let[a,b]=period(summaryMonth,'month'),t=totals(a,b),miss=dates(a,b).filter(missing);$('summary-body').innerHTML=`<h3>${a.slice(0,7)} 月摘要</h3><dl class="totals">${[['收入',t.income,'amt-income'],['支出',t.expense,'amt-expense'],['結餘',t.balance,'amt-balance']].map(([k,v,c])=>`<div class="${c}${k==='結餘'?' grand':''}"><dt>${k}</dt><dd>${money(v)}</dd></div>`).join('')}</dl><section class="block"><h3>沒記錄的天數：${miss.length}</h3><p class="${miss.length?'miss':'empty-msg'}">${miss.length?miss.join('、')+'：這天沒有記錄':'沒有漏記'}</p></section><section class="block"><h3>補貨提醒</h3><p>${data.ingredients.filter(i=>stock(i).low).length?`<span class="miss">${data.ingredients.filter(i=>stock(i).low).map(i=>esc(i.name)+' 該補貨了（剩餘 '+stock(i).remaining+' '+esc(i.unit)+'）').join('、')}</span>`:'<span class="empty-msg">目前沒有需要補貨的食材。</span>'}</p></section><section class="block"><h3>各口味成本與售價</h3>${data.products.map(p=>`<div class="item"><h4>${esc(p.name)}</h4><p>成本：${esc(costText(p))}／售價：${money(p.price)}</p><p>建議售價：${cost(p).unknown.length||!p.recipe.length?'無法計算':money(cost(p).suggest)} ${esc(alertText(p))}</p></div>`).join('')||'<p class="empty-msg">尚無口味。</p>'}</section><section class="block"><h3>每天與每週小計</h3>${reportRows(a,b,false)}</section>`}
 function render(){renderToday();renderReport();renderCost();renderStock();renderSummary();$('demo-banner').hidden=!demo;updateProtection()}
 function route(){let name=location.hash.slice(1);if(!['today','report','cost','stock','settings','summary'].includes(name))name='today';document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!=='view-'+name);document.querySelectorAll('[data-nav]').forEach(e=>{if(e.dataset.nav===name)e.setAttribute('aria-current','page');else e.removeAttribute('aria-current')});render();window.scrollTo(0,0);requestAnimationFrame(()=>window.scrollTo(0,0))}
 document.addEventListener('submit',e=>{if(readOnly){e.preventDefault();e.stopImmediatePropagation();status('唯讀保護中，請先匯入備份或清空並重新開始。')}},true);
